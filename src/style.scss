@@ -369,4 +369,96 @@
       margin-bottom: 20px;
     }
   }
+
+  /* ---- Two-sided layout (final in the center) ---- */
+
+  .bracket.two-sided {
+    .two-sided-shell {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .wing {
+      display: flex;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .wing-left .rounds {
+      display: flex;
+      flex-direction: row;
+      margin-left: auto;
+
+      .round:not(:last-of-type) {
+        margin-right: var(--round-margin);
+      }
+    }
+
+    .wing-right .rounds {
+      display: flex;
+      flex-direction: row-reverse;
+      margin-right: auto;
+
+      .round:not(:last-of-type) {
+        margin-left: var(--round-margin);
+        margin-right: 0;
+      }
+    }
+
+    .final-column {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      flex: 0 0 auto;
+      padding: 0 calc(var(--round-margin) / 2);
+      align-self: center;
+
+      .round {
+        margin: 0;
+      }
+    }
+
+    /* Mirrored connectors on the right wing (flow toward the center / left). */
+    .wing-right {
+      .match.connect-next {
+        &::after {
+          right: auto;
+          left: calc(-1 * #{$connector-width});
+          border-right: unset;
+          border-left: $connector-border;
+        }
+
+        &:nth-of-type(odd)::after {
+          border-top: $connector-border;
+        }
+
+        &:nth-of-type(even)::after {
+          border-bottom: $connector-border;
+        }
+
+        &.straight::after {
+          width: var(--round-margin);
+          left: calc(-1 * var(--round-margin));
+          right: auto;
+          top: 0;
+          border-bottom: $connector-border;
+          border-top: unset;
+          border-left: unset;
+          border-right: unset;
+        }
+      }
+
+      .opponents.connect-previous {
+        &::before {
+          left: auto;
+          right: calc(-1 * #{$connector-width});
+          border-bottom: $connector-border;
+        }
+      }
+    }
+  }
 }

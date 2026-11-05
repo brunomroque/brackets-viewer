@@ -1,9 +1,29 @@
-# brackets-viewer.js
+# @tatamearena/brackets-viewer
+
+Fork do [brackets-viewer.js](https://github.com/Drarig29/brackets-viewer.js) **v1.9.1** para o TatameArena.
+
+Pacote npm: `@tatamearena/brackets-viewer@1.10.0`  
+Upstream: `Drarig29/brackets-viewer.js` (remote `upstream`) — ver `NOTICE`.
+
+### TatameArena additions (1.10.0)
+
+- **`layout: 'two-sided'`** — asas esquerda/direita com a final no centro ([demo](demo/two-sided.html))
+- **`planPrintPages` / `planEliminationPrintPages`** — paginação A4 (16 atletas/folha), stub da final na borda e distribuição de repescagem IJF A/B · C/D ([demo](demo/print-pagination.html))
+
+API aditiva: o default continua `layout: 'linear'` (compatível com o viewer original).
+
+```js
+await bracketsViewer.render(data, { layout: 'two-sided', clear: true });
+
+const pages = planEliminationPrintPages(firstRoundMatchCount, athleteCount);
+// 16→1, 32→2, 64→4, 128→8 folhas
+```
+
+---
+
+# brackets-viewer.js (upstream)
 
 [![npm](https://img.shields.io/npm/v/brackets-viewer.svg)](https://www.npmjs.com/package/brackets-viewer)
-[![Downloads](https://img.shields.io/npm/dt/brackets-viewer.svg)](https://www.npmjs.com/package/brackets-viewer)
-[![jsDelivr](https://data.jsdelivr.com/v1/package/npm/brackets-viewer/badge?style=rounded)](https://www.jsdelivr.com/package/npm/brackets-viewer)
-[![Package Quality](https://packagequality.com/shield/brackets-viewer.svg)](https://packagequality.com/#?package=brackets-viewer)
 
 A simple library to display tournament brackets (round-robin, single elimination, double elimination).
 

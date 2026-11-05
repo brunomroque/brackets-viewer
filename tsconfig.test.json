@@ -1,0 +1,15 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./dist-test",
+        "declaration": false,
+        "types": ["node", "brackets-model"],
+        "rootDir": "./src"
+    },
+    "include": [
+        "src/print/**/*.ts",
+        "src/twoSided.ts",
+        "src/print/**/*.test.ts",
+        "src/twoSided.test.ts"
+    ]
+}

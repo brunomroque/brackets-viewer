@@ -1,0 +1,51 @@
+/* Print pagination sheets for @tatamearena/brackets-viewer */
+
+.brackets-viewer-print-root {
+  .print-page {
+    box-sizing: border-box;
+    width: 210mm;
+    /* LayoutNG epsilon — avoid blank ghost page */
+    height: calc(297mm - 0.5px);
+    max-height: calc(297mm - 0.5px);
+    overflow: hidden;
+    padding: 8mm;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .print-page-label {
+    font-size: 11px;
+    color: #555;
+    margin: 0 0 6px;
+  }
+
+  .print-repechage {
+    margin-top: 8mm;
+    border-top: 1px solid #ccc;
+    padding-top: 4mm;
+  }
+}
+
+@media print {
+  @page {
+    size: 210mm 297mm;
+    margin: 0;
+  }
+
+  * {
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .brackets-viewer-print-root .print-page {
+    margin: 0;
+    box-shadow: none;
+  }
+}

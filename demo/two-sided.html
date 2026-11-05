@@ -1,0 +1,71 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../dist/brackets-viewer.min.css" />
+    <script type="text/javascript" src="../dist/brackets-viewer.min.js"></script>
+    <link rel="stylesheet" href="themes/light.css" />
+    <title>Two-sided layout demo</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #e8e8e8; margin: 0; padding: 16px; }
+        .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+        .brackets-viewer { background: #fff; padding: 16px; border-radius: 8px; overflow-x: auto; }
+        label { font-size: 14px; }
+    </style>
+</head>
+
+<body>
+    <div class="toolbar">
+        <strong>Two-sided (final no centro)</strong>
+        <label>Atletas:
+            <select id="size">
+                <option value="8">8</option>
+                <option value="16" selected>16</option>
+                <option value="32">32</option>
+            </select>
+        </label>
+        <button id="render">Render</button>
+    </div>
+    <div id="example" class="brackets-viewer"></div>
+
+    <script type="module">
+        async function buildAndRender(size) {
+            const db = window.inMemoryDatabase;
+            await db.reset();
+            const manager = window.bracketsManager;
+
+            const names = Array.from({ length: size }, (_, i) => `Atleta ${i + 1}`);
+            await manager.create.stage({
+                name: `SE ${size} · two-sided`,
+                tournamentId: 0,
+                type: 'single_elimination',
+                seeding: names,
+                settings: { seedOrdering: ['inner_outer'], grandFinal: 'none' },
+            });
+
+            const data = await manager.get.stageData(0);
+            await window.bracketsViewer.render({
+                stages: data.stage,
+                matches: data.match,
+                matchGames: data.match_game,
+                participants: data.participant,
+            }, {
+                selector: '#example',
+                clear: true,
+                layout: 'two-sided',
+                participantOriginPlacement: 'before',
+                showSlotsOrigin: true,
+                highlightParticipantOnHover: true,
+            });
+        }
+
+        document.getElementById('render').addEventListener('click', () => {
+            const size = Number(document.getElementById('size').value);
+            buildAndRender(size);
+        });
+
+        buildAndRender(16);
+    </script>
+</body>
+
+</html>

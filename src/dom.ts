@@ -99,6 +99,31 @@ export function createRoundsContainer(): HTMLElement {
 }
 
 /**
+ * Creates the two-sided bracket shell: left wing + final column + right wing.
+ */
+export function createTwoSidedShell(): {
+    shell: HTMLElement,
+    leftWing: HTMLElement,
+    finalColumn: HTMLElement,
+    rightWing: HTMLElement,
+} {
+    const shell = document.createElement('div');
+    shell.classList.add('two-sided-shell');
+
+    const leftWing = document.createElement('div');
+    leftWing.classList.add('wing', 'wing-left');
+
+    const finalColumn = document.createElement('div');
+    finalColumn.classList.add('final-column');
+
+    const rightWing = document.createElement('div');
+    rightWing.classList.add('wing', 'wing-right');
+
+    shell.append(leftWing, finalColumn, rightWing);
+    return { shell, leftWing, finalColumn, rightWing };
+}
+
+/**
  * Creates a container which contains a round.
  *
  * @param roundId ID of the round.

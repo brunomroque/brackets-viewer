@@ -14,6 +14,11 @@ declare global {
         bracketsManager: BracketsManager,
         stageFormCreator: (configuration: FormConfiguration, submitCallable: CallbackFunction) => void,
         updateFormCreator: (configuration: FormConfiguration, changeCallable: CallbackFunction) => void,
+        /** TatameArena print planner (optional global for demos). */
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        planPrintPages?: (...args: any[]) => any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        planEliminationPrintPages?: (...args: any[]) => any,
     }
 
     interface HTMLElement {
@@ -210,7 +215,27 @@ export interface Config {
      * 
      * @default false
      */
-    clear?: boolean
+    clear?: boolean,
+
+    /**
+     * Bracket layout mode.
+     * - `linear` (default): classic left-to-right rounds.
+     * - `two-sided`: left wing + final in the center + right wing (mirrored).
+     *
+     * @default 'linear'
+     */
+    layout?: 'linear' | 'two-sided',
+
+    /**
+     * Optional print pagination hints (used by demos / host apps).
+     * Pure planning lives in `planPrintPages()` — this only toggles CSS classes.
+     */
+    print?: {
+        page?: 'A4',
+        orientation?: 'portrait',
+        athletesPerSheet?: number,
+        scaleToFill?: boolean,
+    },
 }
 
 /**

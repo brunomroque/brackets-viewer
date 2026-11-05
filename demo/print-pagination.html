@@ -1,0 +1,153 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../dist/brackets-viewer.min.css" />
+    <script type="text/javascript" src="../dist/brackets-viewer.min.js"></script>
+    <link rel="stylesheet" href="themes/light.css" />
+    <title>Print pagination demo</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #9e9e9e; margin: 0; padding: 16px; }
+        .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; color: #111; }
+        .brackets-viewer-print-root { display: flex; flex-direction: column; gap: 16px; }
+        .print-page {
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,.25);
+            width: 210mm;
+            min-height: calc(297mm - 0.5px);
+            max-height: calc(297mm - 0.5px);
+            overflow: hidden;
+            padding: 8mm;
+            box-sizing: border-box;
+            margin: 0 auto;
+        }
+        .print-page-label { font-size: 12px; color: #444; margin: 0 0 8px; }
+        .print-repechage { margin-top: 12px; border-top: 1px dashed #bbb; padding-top: 8px; }
+        .print-repechage h4 { margin: 0 0 6px; font-size: 13px; }
+        @media print {
+            body { background: #fff; padding: 0; }
+            .toolbar { display: none; }
+            .print-page { box-shadow: none; margin: 0; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="toolbar">
+        <strong>Impressão A4 paginada</strong>
+        <label>Atletas:
+            <select id="size">
+                <option value="16">16 (1 folha)</option>
+                <option value="32" selected>32 (2 folhas)</option>
+                <option value="64">64 (4 folhas)</option>
+                <option value="128">128 (8 folhas)</option>
+            </select>
+        </label>
+        <label><input type="checkbox" id="withRepechage" checked> Repescagem IJF (síntese)</label>
+        <button id="render">Gerar folhas</button>
+        <button onclick="window.print()">Imprimir</button>
+    </div>
+    <div id="root" class="brackets-viewer-print-root"></div>
+
+    <script type="module">
+        function groupMatchesByRound(matches, groupId) {
+            const inGroup = matches.filter(m => m.group_id === groupId);
+            const byRound = new Map();
+            for (const m of inGroup) {
+                if (!byRound.has(m.round_id)) byRound.set(m.round_id, []);
+                byRound.get(m.round_id).push(m);
+            }
+            return [...byRound.values()].map(round => round.sort((a, b) => a.number - b.number));
+        }
+
+        async function buildStage(size) {
+            const db = window.inMemoryDatabase;
+            await db.reset();
+            const manager = window.bracketsManager;
+            const names = Array.from({ length: size }, (_, i) => `Atleta ${i + 1}`);
+            await manager.create.stage({
+                name: `SE ${size}`,
+                tournamentId: 0,
+                type: 'single_elimination',
+                seeding: names,
+                settings: { seedOrdering: ['inner_outer'], grandFinal: 'none' },
+            });
+            return manager.get.stageData(0);
+        }
+
+        async function renderPages() {
+            const size = Number(document.getElementById('size').value);
+            const withRep = document.getElementById('withRepechage').checked;
+            const root = document.getElementById('root');
+            root.innerHTML = '';
+
+            const data = await buildStage(size);
+            const groupId = data.match[0].group_id;
+            const matchesByRound = groupMatchesByRound(data.match, groupId);
+            const plans = window.planEliminationPrintPages(matchesByRound[0].length, size);
+
+            for (const plan of plans) {
+                const sheet = document.createElement('section');
+                sheet.className = 'print-page';
+                if (plan.sheetLabel) {
+                    const label = document.createElement('p');
+                    label.className = 'print-page-label';
+                    label.textContent = plan.sheetLabel;
+                    sheet.append(label);
+                }
+
+                const mountId = `sheet-${plan.sliceIndex}`;
+                const mount = document.createElement('div');
+                mount.id = mountId;
+                mount.className = 'brackets-viewer';
+                sheet.append(mount);
+                root.append(sheet);
+
+                const first = matchesByRound[0].length;
+                const filteredMatches = [];
+                for (let roundIndex = 0; roundIndex < matchesByRound.length; roundIndex++) {
+                    const ordered = [...matchesByRound[roundIndex]].sort((a, b) => a.number - b.number);
+                    const isFinal = roundIndex === matchesByRound.length - 1 && ordered.length === 1;
+                    let roundFiltered;
+                    if (isFinal) {
+                        roundFiltered = ordered;
+                    } else {
+                        const span = first / ordered.length;
+                        roundFiltered = ordered.filter((_, order) => {
+                            const matchStart = order * span;
+                            const matchEnd = (order + 1) * span;
+                            return matchStart < plan.firstRoundMatchEnd && matchEnd > plan.firstRoundMatchStart;
+                        }).map((match, i) => ({ ...match, number: i + 1 }));
+                    }
+                    filteredMatches.push(...roundFiltered);
+                }
+
+                await window.bracketsViewer.render({
+                    stages: data.stage,
+                    matches: filteredMatches,
+                    matchGames: [],
+                    participants: data.participant,
+                }, {
+                    selector: `#${mountId}`,
+                    clear: true,
+                    layout: 'two-sided',
+                    participantOriginPlacement: 'before',
+                    showSlotsOrigin: true,
+                });
+
+                if (withRep && (!plan.panel || plan.panel.includeRepechage)) {
+                    const rep = document.createElement('div');
+                    rep.className = 'print-repechage';
+                    const halfLabel = plan.repechageHalf === 0 ? 'A/B' : 'C/D';
+                    rep.innerHTML = `<h4>Repescagem · metade ${halfLabel}</h4><p style="font-size:12px;margin:0">Strip sintética para demonstrar distribuição IJF nesta folha.</p>`;
+                    sheet.append(rep);
+                }
+            }
+        }
+
+        document.getElementById('render').addEventListener('click', renderPages);
+        renderPages();
+    </script>
+</body>
+
+</html>

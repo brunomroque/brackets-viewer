@@ -3,4 +3,5 @@
 node_modules
 package-lock.json
 docs
-dist/*.d.ts
+dist/**/*.d.ts
+dist-test

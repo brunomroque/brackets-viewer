@@ -1,10 +1,13 @@
 import './style.scss';
+import './print.scss';
 import { Participant, Match, ParticipantResult, Stage, Status, GroupType, FinalType, Id, type RankingItem } from 'brackets-model';
 import { splitBy, getOriginAbbreviation, findRoot, completeWithBlankMatches, sortBy, isMatchGame, isMatch, splitByWithLeftovers } from './helpers';
 import * as dom from './dom';
 import * as lang from './lang';
 import { Locale } from './lang';
 import { helpers } from 'brackets-manager';
+import { partitionBracketForTwoSided } from './twoSided';
+import { planPrintPages } from './print';
 import {
     Config,
     OriginHint,
@@ -20,6 +23,10 @@ import {
     MatchGameWithMetadata,
     ToggleEvent,
 } from './types';
+
+export { planPrintPages } from './print';
+export * from './print';
+export * from './twoSided';
 
 export class BracketsViewer {
 
@@ -78,6 +85,8 @@ export class BracketsViewer {
             highlightParticipantOnHover: config?.highlightParticipantOnHover ?? true,
             showRankingTable: config?.showRankingTable ?? true,
             rankingFormula: config?.rankingFormula ?? ((item): number => 3 * item.wins + 1 * item.draws + 0 * item.losses),
+            layout: config?.layout ?? 'linear',
+            print: config?.print,
         };
 
         if (config?.onMatchClick)
@@ -379,6 +388,14 @@ export class BracketsViewer {
     }
 
     /**
+     * Whether two-sided layout applies to this bracket type.
+     */
+    private usesTwoSidedLayout(bracketType: GroupType): boolean {
+        return this.config.layout === 'two-sided'
+            && (bracketType === 'single_bracket' || bracketType === 'winner_bracket');
+    }
+
+    /**
      * Renders a bracket.
      *
      * @param container The container to render into.
@@ -388,6 +405,11 @@ export class BracketsViewer {
      * @param connectFinal Whether to connect the last match of the bracket to the first match of the final group.
      */
     private renderBracket(container: HTMLElement, matchesByRound: MatchWithMetadata[][], getRoundName: RoundNameGetter, bracketType: GroupType, connectFinal?: boolean): void {
+        if (this.usesTwoSidedLayout(bracketType)) {
+            this.renderTwoSidedBracket(container, matchesByRound, getRoundName, bracketType, connectFinal);
+            return;
+        }
+
         const groupId = matchesByRound[0][0].group_id;
         const roundCount = matchesByRound.length;
         const bracketContainer = dom.createBracketContainer(groupId, lang.getBracketName(this.stage, bracketType));
@@ -431,6 +453,120 @@ export class BracketsViewer {
     }
 
     /**
+     * Renders a two-sided bracket (left wing + final center + right wing).
+     */
+    private renderTwoSidedBracket(
+        container: HTMLElement,
+        matchesByRound: MatchWithMetadata[][],
+        getRoundName: RoundNameGetter,
+        bracketType: GroupType,
+        connectFinal?: boolean,
+    ): void {
+        const groupId = matchesByRound[0][0].group_id;
+        const roundCount = matchesByRound.length;
+        const bracketContainer = dom.createBracketContainer(groupId, lang.getBracketName(this.stage, bracketType));
+        bracketContainer.classList.add('two-sided');
+
+        const { matches: completedMatches, fromToornament } = completeWithBlankMatches(bracketType, matchesByRound[0], matchesByRound[1]);
+        this.alwaysConnectFirstRound = !fromToornament;
+
+        const preparedRounds = matchesByRound.map((roundMatches, roundIndex) => {
+            const roundNumber = roundIndex + 1;
+            return fromToornament && roundNumber === 1 ? completedMatches : roundMatches;
+        });
+
+        const { wingRounds, finalRound } = partitionBracketForTwoSided(
+            preparedRounds as MatchWithMetadata[][],
+        );
+
+        const { shell, leftWing, finalColumn, rightWing } = dom.createTwoSidedShell();
+        const leftRounds = dom.createRoundsContainer();
+        const rightRounds = dom.createRoundsContainer();
+        leftWing.append(leftRounds);
+        rightWing.append(rightRounds);
+
+        for (let roundIndex = 0; roundIndex < wingRounds.length; roundIndex++) {
+            const roundNumber = roundIndex + 1;
+            const roundId = matchesByRound[roundIndex][0].round_id;
+            const roundName = this.getRoundName({
+                roundNumber,
+                roundCount,
+                fractionOfFinal: helpers.getFractionOfFinal(roundNumber, roundCount),
+                groupType: lang.toI18nKey(bracketType as Exclude<GroupType, 'final_group'>),
+            }, getRoundName);
+
+            const leftContainer = dom.createRoundContainer(roundId, roundName);
+            const rightContainer = dom.createRoundContainer(`${String(roundId)}-r` as Id, roundName);
+
+            // Last wing round (semi) connects toward the center final.
+            const isSemiTowardCenter = roundIndex === wingRounds.length - 1;
+            const wingConnectFinal = isSemiTowardCenter || connectFinal;
+
+            for (const match of wingRounds[roundIndex].left) {
+                leftContainer.append(match && this.createBracketMatch({
+                    ...match,
+                    metadata: {
+                        ...match.metadata,
+                        roundNumber,
+                        roundCount,
+                        matchLocation: bracketType,
+                        connectFinal: wingConnectFinal,
+                    },
+                }) || this.skipBracketMatch());
+            }
+
+            for (const match of wingRounds[roundIndex].right) {
+                rightContainer.append(match && this.createBracketMatch({
+                    ...match,
+                    metadata: {
+                        ...match.metadata,
+                        roundNumber,
+                        roundCount,
+                        matchLocation: bracketType,
+                        connectFinal: wingConnectFinal,
+                    },
+                }) || this.skipBracketMatch());
+            }
+
+            leftRounds.append(leftContainer);
+            rightRounds.append(rightContainer);
+        }
+
+        if (finalRound?.length) {
+            const finalRoundIndex = matchesByRound.length - 1;
+            const roundNumber = finalRoundIndex + 1;
+            const roundId = matchesByRound[finalRoundIndex][0].round_id;
+            const roundName = this.getRoundName({
+                roundNumber,
+                roundCount,
+                fractionOfFinal: helpers.getFractionOfFinal(roundNumber, roundCount),
+                groupType: lang.toI18nKey(bracketType as Exclude<GroupType, 'final_group'>),
+            }, getRoundName);
+
+            const finalRoundContainer = dom.createRoundContainer(roundId, roundName);
+            for (const match of finalRound) {
+                finalRoundContainer.append(match && this.createBracketMatch({
+                    ...match,
+                    metadata: {
+                        ...match.metadata,
+                        roundNumber,
+                        roundCount,
+                        matchLocation: bracketType,
+                        connectFinal: false,
+                    },
+                }) || this.skipBracketMatch());
+            }
+            finalColumn.append(finalRoundContainer);
+        }
+
+        // Marker used by renderFinal for grand final injection in two-sided DE.
+        finalColumn.setAttribute('data-two-sided-final', 'true');
+
+        bracketContainer.append(shell);
+        container.append(bracketContainer);
+    }
+
+    /**
      * Renders a final group.
      *
      * @param container The container to render into.
@@ -442,7 +578,9 @@ export class BracketsViewer {
         if (matches.length === 0)
             return;
 
-        const upperBracket = container.querySelector('.bracket .rounds');
+        const twoSidedFinal = container.querySelector('.final-column[data-two-sided-final]');
+        const upperBracket = twoSidedFinal
+            || container.querySelector('.bracket .rounds');
         if (!upperBracket) throw Error('Upper bracket not found.');
 
         const winnerWb = matches[0].opponent1;

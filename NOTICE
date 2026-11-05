@@ -1,0 +1,11 @@
+brackets-viewer (TatameArena edition)
+=====================================
+
+This package is derived from brackets-viewer.js by Corentin Girard (Drarig29).
+
+Upstream: https://github.com/Drarig29/brackets-viewer.js
+Upstream license: MIT (see LICENSE)
+Base version: 1.9.1 (commit 6adf290)
+
+TatameArena additions (two-sided layout, A4 print pagination) are copyright
+their respective contributors and remain under the same MIT terms.

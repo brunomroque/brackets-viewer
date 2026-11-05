@@ -1,11 +1,13 @@
 {
-    "name": "brackets-viewer",
-    "version": "1.9.1",
-    "description": "A simple library to display tournament brackets (round-robin, single elimination, double elimination)",
+    "name": "@tatamearena/brackets-viewer",
+    "version": "1.10.0",
+    "description": "TatameArena fork of brackets-viewer.js — two-sided layout and A4 print pagination for tournament brackets",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "files": [
-        "dist/"
+        "dist/",
+        "NOTICE",
+        "LICENSE"
     ],
     "scripts": {
         "db": "npx json-server --watch demo/db.json",
@@ -14,31 +16,37 @@
         "prepare": "npm run build",
         "prepublishOnly": "npm run build",
         "lint": "eslint '**/*.{js,ts}' --fix",
-        "test": "exit 0",
+        "test": "npx tsc -p tsconfig.test.json && node --test dist-test/print/*.test.js dist-test/twoSided.test.js",
         "watch-demo": "browser-sync demo . --watch dist",
         "tsc": "tsc --emitDeclarationOnly"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/Drarig29/brackets-viewer.js.git"
+        "url": "git+https://github.com/brunomroque/brackets-viewer.git"
     },
     "keywords": [
         "javascript",
         "tournament",
         "brackets",
         "viewer",
-        "display"
+        "display",
+        "two-sided",
+        "print",
+        "tatamearena"
     ],
     "author": "Corentin Girard",
-    "license": "ISC",
+    "contributors": [
+        "TatameArena"
+    ],
+    "license": "MIT",
     "bugs": {
-        "url": "https://github.com/Drarig29/brackets-viewer.js/issues"
+        "url": "https://github.com/brunomroque/brackets-viewer/issues"
     },
     "browserslist": [
         "defaults",
         "not IE 11"
     ],
-    "homepage": "https://github.com/Drarig29/brackets-viewer.js#readme",
+    "homepage": "https://github.com/brunomroque/brackets-viewer#readme",
     "dependencies": {
         "brackets-manager": "^1.11.0",
         "brackets-memory-db": "^1.0.6",
@@ -73,7 +81,7 @@
         "webpack-cli": "^4.10.0"
     },
     "volta": {
-        "node": "14.21.3",
-        "npm": "7.24.2"
+        "node": "20.18.0",
+        "npm": "10.8.2"
     }
 }
