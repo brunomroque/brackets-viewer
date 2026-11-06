@@ -14,6 +14,7 @@ describe('eliminationPrintSliceCount', () => {
         assert.equal(eliminationPrintSliceCount(32), 2);
         assert.equal(eliminationPrintSliceCount(64), 4);
         assert.equal(eliminationPrintSliceCount(128), 8);
+        assert.equal(eliminationPrintSliceCount(256), 16);
     });
 });
 
@@ -54,5 +55,18 @@ describe('planEliminationPrintPages', () => {
         const panel = posterPanelForSlice(7, 8);
         assert.equal(panel?.side, 'right');
         assert.equal(panel?.includeRepechage, true);
+    });
+
+    it('splits 256 into 16 sheets at 16 athletes each', () => {
+        const pages = planEliminationPrintPages(128);
+        assert.equal(pages.length, 16);
+        assert.equal(bracketAthleteCapacity(128), 256);
+        assert.ok(pages.every((page) => page.athleteEnd - page.athleteStart === 16));
+        assert.equal(pages[0].panel?.side, 'left');
+        assert.equal(pages[0].panel?.bandsPerSide, 8);
+        assert.equal(pages[0].panel?.includeRepechage, false);
+        assert.equal(pages[14].panel?.includeRepechage, true);
+        assert.equal(pages[15].panel?.side, 'right');
+        assert.equal(pages[15].panel?.includeRepechage, true);
     });
 });

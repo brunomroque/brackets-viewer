@@ -1,11 +1,11 @@
 import { DEFAULT_ATHLETES_PER_SHEET } from './geometry';
 
-export type EliminationPrintSliceCount = 1 | 2 | 4 | 8;
+export type EliminationPrintSliceCount = 1 | 2 | 4 | 8 | 16;
 
 export type PosterSide = 'left' | 'right';
 
 /** Vertical band within one side of the poster. */
-export type PosterBand = 'full' | 'top' | 'bottom' | `band${0 | 1 | 2 | 3}`;
+export type PosterBand = 'full' | 'top' | 'bottom' | `band${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 
 export type PosterPanel = {
     side: PosterSide;
@@ -52,7 +52,8 @@ export function eliminationPrintSliceCount(
     if (bracketAthleteCapacityValue <= athletesPerSheet) return 1;
     if (bracketAthleteCapacityValue <= athletesPerSheet * 2) return 2;
     if (bracketAthleteCapacityValue <= athletesPerSheet * 4) return 4;
-    return 8;
+    if (bracketAthleteCapacityValue <= athletesPerSheet * 8) return 8;
+    return 16;
 }
 
 function bandsPerSideForSliceCount(sliceCount: EliminationPrintSliceCount): number {
@@ -65,6 +66,8 @@ function bandsPerSideForSliceCount(sliceCount: EliminationPrintSliceCount): numb
             return 2;
         case 8:
             return 4;
+        case 16:
+            return 8;
         default: {
             const _exhaustive: never = sliceCount;
             return _exhaustive;
@@ -75,7 +78,7 @@ function bandsPerSideForSliceCount(sliceCount: EliminationPrintSliceCount): numb
 function bandLabel(bandIndex: number, bandsPerSide: number): PosterBand {
     if (bandsPerSide <= 1) return 'full';
     if (bandsPerSide === 2) return bandIndex === 0 ? 'top' : 'bottom';
-    return `band${bandIndex as 0 | 1 | 2 | 3}`;
+    return `band${bandIndex as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 }
 
 /** Poster geometry for a given sheet index. */
@@ -113,6 +116,14 @@ function bandWord(band: PosterBand): string {
             return ' faixa 3';
         case 'band3':
             return ' faixa 4';
+        case 'band4':
+            return ' faixa 5';
+        case 'band5':
+            return ' faixa 6';
+        case 'band6':
+            return ' faixa 7';
+        case 'band7':
+            return ' faixa 8';
         default: {
             const _exhaustive: never = band;
             return _exhaustive;
