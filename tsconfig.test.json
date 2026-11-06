@@ -11,5 +11,10 @@
         "src/twoSided.ts",
         "src/print/**/*.test.ts",
         "src/twoSided.test.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "dist-test"
     ]
 }

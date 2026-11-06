@@ -120,8 +120,19 @@ export function completeWithBlankMatches(bracketType: GroupType, matches: MatchW
     if (bracketType === 'loser_bracket')
         sources = nextMatches.map(match => match.opponent2?.position || null);
 
-    // The manager does not set positions where the Toornament layer does.
-    if (sources.filter(source => source !== null).length === 0)
+    const nonNullSources = sources.filter(source => source !== null);
+
+    // brackets-manager sets seed `position` on a few advanced opponents; Toornament
+    // fills previous-round match numbers across the whole next round. Sparse
+    // positions are seeds, not Toornament source maps — rewriting R1 would wipe byes.
+    if (nonNullSources.length === 0 || nonNullSources.length < sources.length / 2)
+        return { matches, fromToornament: false };
+
+    // Full first round (2× next for WB/SE, 1× for LB major) needs no blank slots.
+    const expectedFirstRoundSize = bracketType === 'loser_bracket'
+        ? nextMatches.length
+        : nextMatches.length * 2;
+    if (matches.length >= expectedFirstRoundSize)
         return { matches, fromToornament: false };
 
     return {

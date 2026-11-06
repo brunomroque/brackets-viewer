@@ -42,6 +42,23 @@ describe('twoSided partition', () => {
         assert.equal(wingRounds[2].right.length, 1);
         assert.ok(finalRound);
         assert.equal(finalRound!.length, 1);
-        assert.equal(finalRound![0].id, 300);
+        assert.equal(finalRound![0]!.id, 300);
+    });
+
+    it('tolerates null placeholders from completeWithBlankMatches (chave 64 com byes)', () => {
+        const r1 = [
+            fakeMatch(1),
+            null,
+            fakeMatch(3),
+            null,
+            fakeMatch(5),
+            fakeMatch(6),
+            null,
+            fakeMatch(8),
+        ];
+        const { left, right } = splitRoundMatchesForWings(r1);
+        assert.equal(left.length, 4);
+        assert.equal(right.length, 4);
+        assert.equal(left.filter(Boolean).length + right.filter(Boolean).length, 5);
     });
 });
